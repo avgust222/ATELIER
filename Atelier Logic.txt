@@ -1,0 +1,211 @@
+const { useState, useEffect } = React;
+
+// Генерация дат (начиная с 6 марта 2026)
+const getUpcomingDays = (count) => {
+  const months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
+  const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const days = [];
+  const startDate = new Date(2026, 2, 6); 
+
+  for (let i = 0; i < count; i++) {
+    const current = new Date(startDate);
+    current.setDate(startDate.getDate() + i);
+    days.push({
+      day: daysOfWeek[current.getDay()],
+      num: current.getDate(),
+      full: `${current.getDate()} ${months[current.getMonth()]}`,
+      id: current.getTime()
+    });
+  }
+  return days;
+};
+
+// Вспомогательный компонент для анимации появления
+const FadeIn = ({ children }) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setVisible(true); }, []);
+  return (
+    <div className={`step-transition transform ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+      {children}
+    </div>
+  );
+};
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [bookingData, setBookingData] = useState({ service: null, master: null, date: null, time: null });
+  const upcomingDays = getUpcomingDays(7);
+  const [activeDate, setActiveDate] = useState(upcomingDays[0].full);
+
+  // Инициализация иконок после отрисовки компонентов
+  useEffect(() => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  });
+
+  const next = () => setStep(s => s + 1);
+  const back = () => setStep(s => s - 1);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 antialiased">
+      {/* Верхняя навигация */}
+      <div className="w-full max-w-md flex justify-between items-center mb-12 h-8">
+        {step > 0 && step < 5 ? (
+          <button onClick={back} className="flex items-center text-[#86868B] hover:text-[#1D1D1F] transition-all group">
+            <i data-lucide="chevron-left" className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform"></i>
+            <span className="text-sm font-medium">Назад</span>
+          </button>
+        ) : <div/>}
+        {step > 0 && step < 5 && <span className="text-[10px] font-bold tracking-[0.2em] text-[#A1A1A6]">ШАГ {step} ИЗ 4</span>}
+      </div>
+
+      <div className="w-full max-w-md">
+        {/* Экран 0: Приветствие */}
+        {step === 0 && (
+          <FadeIn>
+            <div className="text-center">
+              <div className="inline-block p-5 bg-white rounded-[2rem] shadow-sm border border-gray-100 mb-8">
+                <i data-lucide="scissors" className="w-8 h-8 text-black"></i>
+              </div>
+              <h1 className="text-5xl font-semibold mb-6 tracking-tight">A T E L I E R</h1>
+              <p className="text-[#86868B] text-xl font-light mb-12 leading-relaxed">Безупречный стиль. <br/>Ваше время в надежных руках.</p>
+              <button onClick={next} className="bg-[#1D1D1F] text-white px-12 py-5 rounded-full flex items-center mx-auto space-x-3 hover:scale-[1.03] active:scale-95 transition-all shadow-xl shadow-black/10">
+                <span className="text-lg font-medium">Записаться</span>
+                <i data-lucide="arrow-right" className="w-5 h-5"></i>
+              </button>
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Экран 1: Выбор услуги */}
+        {step === 1 && (
+          <FadeIn>
+            <h2 className="text-3xl font-semibold mb-10 text-center tracking-tight">Услуги</h2>
+            <div className="space-y-4">
+              {[
+                {id:'h', title:'Стрижка', price:'3 500 ₽', icon:'scissors', desc:'60 минут стиля'},
+                {id:'b', title:'Борода', price:'2 000 ₽', icon:'user', desc:'Идеальный контур'},
+                {id:'c', title:'Комбо', price:'5 000 ₽', icon:'sparkles', desc:'Полный уход'}
+              ].map(s => (
+                <button key={s.id} onClick={() => { setBookingData({...bookingData, service: s}); next(); }} 
+                  className="w-full p-6 bg-[#F5F5F7]/50 rounded-[2.5rem] flex justify-between items-center hover:bg-white border border-transparent hover:border-black/5 transition-all group shadow-sm hover:shadow-xl">
+                  <div className="flex items-center space-x-5">
+                    <div className="bg-white p-4 rounded-2xl shadow-sm group-hover:bg-black group-hover:text-white transition-all">
+                      <i data-lucide={s.icon} className="w-5 h-5"></i>
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold text-lg">{s.title}</div>
+                      <div className="text-xs text-[#86868B]">{s.desc}</div>
+                    </div>
+                  </div>
+                  <span className="font-semibold">{s.price}</span>
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Экран 2: Выбор мастера */}
+        {step === 2 && (
+          <FadeIn>
+            <h2 className="text-3xl font-semibold mb-10 text-center tracking-tight">Мастер</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { id: 'm1', name: 'Александр', rank: 'Art Director' },
+                { id: 'm2', name: 'Давид', rank: 'Senior' },
+                { id: 'm3', name: 'Марк', rank: 'Top-Barber' },
+                { id: 'any', name: 'Любой', rank: 'Ближайшее время' },
+              ].map(m => (
+                <button key={m.id} onClick={() => { setBookingData({...bookingData, master: m}); next(); }}
+                  className="p-8 bg-[#F5F5F7]/50 rounded-[2.5rem] border border-transparent hover:border-black/5 hover:bg-white transition-all flex flex-col items-center shadow-sm hover:shadow-xl group">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 text-xl font-medium shadow-sm group-hover:bg-black group-hover:text-white transition-all">
+                    {m.name.charAt(0)}
+                  </div>
+                  <div className="font-semibold text-sm">{m.name}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-[#A1A1A6] mt-2 font-bold">{m.rank}</div>
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Экран 3: Выбор даты и времени */}
+        {step === 3 && (
+          <FadeIn>
+            <h2 className="text-3xl font-semibold mb-8 text-center tracking-tight text-black">Дата и время</h2>
+            <div className="flex space-x-3 overflow-x-auto pb-6 mb-8 no-scrollbar">
+              {upcomingDays.map(d => (
+                <button key={d.id} onClick={() => setActiveDate(d.full)}
+                  className={`flex-shrink-0 w-16 h-24 rounded-[2rem] flex flex-col items-center justify-center transition-all border ${activeDate === d.full ? 'bg-white border-black/10 shadow-xl text-black scale-105' : 'bg-transparent border-transparent text-[#A1A1A6]'}`}>
+                  <span className="text-[10px] font-bold uppercase mb-2">{d.day}</span>
+                  <span className="text-xl font-bold">{d.num}</span>
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {['10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30'].map(t => (
+                <button key={t} onClick={() => { setBookingData({...bookingData, date: activeDate, time: t}); next(); }}
+                  className="py-5 bg-[#F5F5F7]/60 rounded-2xl text-xs font-bold hover:bg-black hover:text-white transition-all shadow-sm">
+                  {t}
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Экран 4: Итоговая информация */}
+        {step === 4 && (
+          <FadeIn>
+             <h2 className="text-3xl font-semibold mb-10 text-center tracking-tight">Ваш визит</h2>
+             <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-black/5 border border-black/5 mb-10">
+                <div className="space-y-10">
+                  <div className="flex justify-between items-end border-b border-gray-50 pb-8">
+                    <div>
+                      <p className="text-[10px] text-[#A1A1A6] uppercase tracking-[0.2em] mb-2 font-bold">Услуга</p>
+                      <p className="text-xl font-medium tracking-tight">{bookingData.service?.title}</p>
+                    </div>
+                    <p className="text-xl font-semibold">{bookingData.service?.price}</p>
+                  </div>
+                  <div className="flex justify-between items-end border-b border-gray-50 pb-8">
+                    <div>
+                      <p className="text-[10px] text-[#A1A1A6] uppercase tracking-[0.2em] mb-2 font-bold">Мастер</p>
+                      <p className="text-xl font-medium tracking-tight">{bookingData.master?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] text-[#A1A1A6] uppercase tracking-[0.2em] mb-2 font-bold">Время</p>
+                      <p className="text-xl font-medium tracking-tight">{bookingData.date}, {bookingData.time}</p>
+                    </div>
+                  </div>
+                </div>
+             </div>
+             <button onClick={next} className="w-full bg-black text-white py-6 rounded-full text-lg font-medium shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                Подтвердить
+              </button>
+          </FadeIn>
+        )}
+
+        {/* Экран 5: Успешное завершение */}
+        {step === 5 && (
+          <FadeIn>
+            <div className="text-center mt-12">
+              <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-10 shadow-2xl">
+                <i data-lucide="check" className="text-white w-10 h-10"></i>
+              </div>
+              <h2 className="text-4xl font-semibold mb-4 tracking-tight">Ждем вас.</h2>
+              <p className="text-[#86868B] text-lg font-light mb-16 leading-relaxed">Запись подтверждена на {bookingData.date} в {bookingData.time}.</p>
+              <button onClick={() => setStep(0)} className="text-[#A1A1A6] hover:text-black transition-colors text-xs uppercase tracking-widest font-bold border-b border-transparent hover:border-black pb-1">
+                На главную
+              </button>
+            </div>
+          </FadeIn>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
